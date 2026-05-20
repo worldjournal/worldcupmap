@@ -52,7 +52,7 @@ svg#basemap {
   cursor: pointer; transition: transform 0.2s;
 }
 .pin-dot::after { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
-.pin-label { font-size: 8.5px; margin-top: 2px; color: rgba(255,255,255,0.85); white-space: nowrap; }
+.pin-label { font-size: 11px; margin-top: 2px; color: rgba(255,255,255,0.95); white-space: nowrap; font-weight: 500; }
 
 .tooltip-box {
   position: absolute;
@@ -85,7 +85,7 @@ svg#basemap {
 @media (max-width: 480px) {
   .tooltip-box { width: 175px; font-size: 12.5px; }
   .pin-dot { width: 15px; height: 15px; }
-  .pin-label { font-size: 8px; }
+  .pin-label { font-size: 10px; }
 }
 </style>
 </head>
@@ -126,7 +126,6 @@ svg#basemap {
       <path fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)" stroke-width="1" d="M110,370 L280,390 L300,410 L320,440 L340,460 L330,490 L300,510 L260,520 L220,510 L190,490 L170,460 L150,440 L130,420 L110,400 Z"/>
     </svg>
 
-    <!-- 所有城市 -->
     <!-- 溫哥華 -->
     <div class="city-pin ca flip-down" style="left:12.3%;top:14.7%">
       <div class="pin-dot"></div>
@@ -327,7 +326,3 @@ svg#basemap {
 
 </body>
 </html>
-```
-
-直接全選複製 → 覆蓋 GitHub 上的 `index.html` 即可。  
-需要再改其他地方隨時告訴我！
