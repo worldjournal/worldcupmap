@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2026 FIFA 世界盃｜16城索引地圖</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Noto Sans TC', sans-serif;
+  background: #0a1628;
+  color: #fff;
+  min-height: 100vh;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.header {
+  text-align: center;
+  padding: 28px 20px 16px;
+}
+.header .series {
+  font-size: 12px;
+  letter-spacing: 3px;
+  color: #c8a84b;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.header h1 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 6px;
+}
+.header p {
+  font-size: 13px;
+  color: rgba(255,255,255,0.5);
+}
+
+.legend {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  padding: 10px 20px 16px;
+  flex-wrap: wrap;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.7);
+}
+.legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+.dot-us { background: #4a9eff; }
+.dot-ca { background: #ff6b35; }
+.dot-mx { background: #2ecc71; }
+
+.map-wrapper {
+  position: relative;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 16px 32px;
+}
+
+.map-inner {
+  position: relative;
+  width: 100%;
+}
+
+svg#basemap {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* City pin */
+.city-pin {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  cursor: pointer;
+}
+
+.pin-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  transition: transform 0.18s ease;
+  position: relative;
+}
+.pin-dot::after {
+  content: '';
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* Hit area for easier tapping on mobile */
+.pin-dot::before {
+  content: '';
+  position: absolute;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.us   .pin-dot { border-color:#4a9eff; color:#4a9eff; background:rgba(74,158,255,0.2); }
+.ca   .pin-dot { border-color:#ff6b35; color:#ff6b35; background:rgba(255,107,53,0.2); }
+.mx   .pin-dot { border-color:#2ecc71; color:#2ecc71; background:rgba(46,204,113,0.2); }
+.final .pin-dot {
+  border-color:#c8a84b; color:#c8a84b;
+  background:rgba(200,168,75,0.25);
+  width:28px; height:28px; border-width:2.5px;
+}
+.final .pin-dot::after { width:10px; height:10px; }
+
+.city-pin.active .pin-dot { transform: scale(1.2); }
+
+.pin-label {
+  font-size: 9px;
+  text-align: center;
+  margin-top: 3px;
+  color: rgba(255,255,255,0.8);
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Overlay to close tooltip when tapping outside */
+.overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+}
+.overlay.visible { display: block; }
+
+/* Tooltip - controlled by JS */
+.tooltip-box {
+  position: fixed;
+  background: rgba(8,18,36,0.98);
+  border: 1px solid rgba(200,168,75,0.5);
+  border-radius: 12px;
+  padding: 16px 18px;
+  pointer-events: auto;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  z-index: 200;
+  width: 230px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.7);
+  display: none;
+}
+.tooltip-box.visible {
+  display: block;
+  opacity: 1;
+}
+
+.tt-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  font-size: 16px;
+  color: rgba(255,255,255,0.4);
+  cursor: pointer;
+  line-height: 1;
+  padding: 4px;
+}
+.tt-close:hover { color: #fff; }
+
+.tt-country {
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+  padding-right: 20px;
+}
+.us-tt   { color: #4a9eff; }
+.ca-tt   { color: #ff6b35; }
+.mx-tt   { color: #2ecc71; }
+.final-tt { color: #c8a84b; }
+
+.tt-city    { font-size:16px; font-weight:700; color:#fff; margin-bottom:4px; }
+.tt-stadium { font-size:12px; color:rgba(255,255,255,0.55); margin-bottom:8px; line-height:1.4; }
+.tt-matches { font-size:12px; color:#c8a84b; margin-bottom:10px; }
+.tt-link {
+  display: block;
+  font-size: 12px;
+  color: #c8a84b;
+  border: 1px solid rgba(200,168,75,0.35);
+  padding: 6px 12px;
+  border-radius: 6px;
+  text-decoration: none;
+  text-align: center;
+  transition: background 0.15s;
+}
+.tt-link:hover { background: rgba(200,168,75,0.15); }
+.tt-soon { font-size:11px; color:rgba(255,255,255,0.28); font-style:italic; text-align:center; }
+
+.subtitle-note {
+  text-align: center;
+  font-size: 11px;
+  color: rgba(255,255,255,0.28);
+  padding-bottom: 20px;
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="series">世界盃就在家門口｜系列報導</div>
+  <h1>2026 FIFA 世界盃｜16城索引地圖</h1>
+  <p>點擊城市查看資訊及觀賽指南連結</p>
+</div>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot dot-us"></div>美國（11城）</div>
+  <div class="legend-item"><div class="legend-dot dot-ca"></div>加拿大（2城）</div>
+  <div class="legend-item"><div class="legend-dot dot-mx"></div>墨西哥（3城）</div>
+</div>
+
+<!-- Overlay to catch outside taps -->
+<div class="overlay" id="overlay"></div>
+
+<!-- Floating tooltip -->
+<div class="tooltip-box" id="tooltip">
+  <span class="tt-close" id="ttClose">✕</span>
+  <div class="tt-country" id="ttCountry"></div>
+  <div class="tt-city" id="ttCity"></div>
+  <div class="tt-stadium" id="ttStadium"></div>
+  <div class="tt-matches" id="ttMatches"></div>
+  <div id="ttLinkWrap"></div>
+</div>
+
+<div class="map-wrapper">
+<div class="map-inner" id="mapInner">
+
+  <svg id="basemap" viewBox="0 0 960 600" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="bg" cx="50%" cy="50%" r="60%">
+        <stop offset="0%" style="stop-color:#0d1f3c"/>
+        <stop offset="100%" style="stop-color:#040d1a"/>
+      </radialGradient>
+    </defs>
+    <rect width="960" height="600" fill="url(#bg)" rx="12"/>
+    <g stroke="rgba(255,255,255,0.03)" stroke-width="1">
+      <line x1="0" y1="150" x2="960" y2="150"/>
+      <line x1="0" y1="300" x2="960" y2="300"/>
+      <line x1="0" y1="450" x2="960" y2="450"/>
+      <line x1="240" y1="0" x2="240" y2="600"/>
+      <line x1="480" y1="0" x2="480" y2="600"/>
+      <line x1="720" y1="0" x2="720" y2="600"/>
+    </g>
+    <path fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)" stroke-width="1"
+      d="M80,30 L820,30 L820,200 L750,210 L720,180 L680,190 L650,170 L600,180 L560,160 L500,170 L450,150 L400,160 L350,140 L300,155 L250,140 L200,155 L150,140 L100,155 L80,140 Z"/>
+    <path fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)" stroke-width="1"
+      d="M100,155 L820,200 L800,390 L750,400 L700,380 L650,395 L580,385 L520,395 L460,385 L400,395 L340,380 L280,390 L220,375 L160,385 L110,370 L90,340 L80,290 L85,240 L100,200 Z"/>
+    <path fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)" stroke-width="1"
+      d="M110,370 L280,390 L300,410 L320,440 L340,460 L330,490 L300,510 L260,520 L220,510 L190,490 L170,460 L150,440 L130,420 L110,400 Z"/>
+  </svg>
+
+  <!-- City pins -->
+  <div class="city-pin ca" style="left:12.3%;top:14.7%" data-key="vancouver">
+    <div class="pin-dot"></div>
+    <div class="pin-label">溫哥華</div>
+  </div>
+  <div class="city-pin us" style="left:15.4%;top:23.3%" data-key="seattle">
+    <div class="pin-dot"></div>
+    <div class="pin-label">西雅圖</div>
+  </div>
+  <div class="city-pin us" style="left:10.4%;top:38.3%" data-key="sf">
+    <div class="pin-dot"></div>
+    <div class="pin-label">舊金山灣區</div>
+  </div>
+  <div class="city-pin us" style="left:13.3%;top:49.2%" data-key="la">
+    <div class="pin-dot"></div>
+    <div class="pin-label">洛杉磯</div>
+  </div>
+  <div class="city-pin ca" style="left:67.7%;top:23%" data-key="toronto">
+    <div class="pin-dot"></div>
+    <div class="pin-label">多倫多</div>
+  </div>
+  <div class="city-pin us" style="left:79.4%;top:29.2%" data-key="boston">
+    <div class="pin-dot"></div>
+    <div class="pin-label">波士頓</div>
+  </div>
+  <div class="city-pin final" style="left:77.9%;top:36.3%" data-key="nyc">
+    <div class="pin-dot"></div>
+    <div class="pin-label">紐約/新澤西 🏆</div>
+  </div>
+  <div class="city-pin us" style="left:75.6%;top:41.3%" data-key="philly">
+    <div class="pin-dot"></div>
+    <div class="pin-label">費城</div>
+  </div>
+  <div class="city-pin us" style="left:51%;top:43%" data-key="kc">
+    <div class="pin-dot"></div>
+    <div class="pin-label">堪薩斯城</div>
+  </div>
+  <div class="city-pin us" style="left:66.7%;top:51.7%" data-key="atlanta">
+    <div class="pin-dot"></div>
+    <div class="pin-label">亞特蘭大</div>
+  </div>
+  <div class="city-pin us" style="left:48.75%;top:55.8%" data-key="dallas">
+    <div class="pin-dot"></div>
+    <div class="pin-label">達拉斯</div>
+  </div>
+  <div class="city-pin us" style="left:49.6%;top:64.2%" data-key="houston">
+    <div class="pin-dot"></div>
+    <div class="pin-label">休士頓</div>
+  </div>
+  <div class="city-pin us" style="left:69.6%;top:63.3%" data-key="miami">
+    <div class="pin-dot"></div>
+    <div class="pin-label">邁阿密</div>
+  </div>
+  <div class="city-pin mx" style="left:39.4%;top:70%" data-key="monterrey">
+    <div class="pin-dot"></div>
+    <div class="pin-label">蒙特雷</div>
+  </div>
+  <div class="city-pin mx" style="left:33.1%;top:78%" data-key="mexicocity">
+    <div class="pin-dot"></div>
+    <div class="pin-label">墨西哥城</div>
+  </div>
+  <div class="city-pin mx" style="left:26.7%;top:79.7%" data-key="guadalajara">
+    <div class="pin-dot"></div>
+    <div class="pin-label">瓜達拉哈拉</div>
+  </div>
+
+</div>
+</div>
+
+<div class="subtitle-note">點擊城市可閱讀完整觀賽指南｜文章陸續更新中</div>
+
+<script>
+const cities = {
+  vancouver:    { name:"溫哥華",      country:"加拿大",        cc:"ca-tt", stadium:"BC Place",              matches:"7場｜含16強（7/7）",      link:"" },
+  seattle:      { name:"西雅圖",      country:"美國",          cc:"us-tt", stadium:"魯門球場（Lumen Field）", matches:"6場",                     link:"" },
+  sf:           { name:"舊金山灣區",  country:"美國",          cc:"us-tt", stadium:"黎維斯球場（Levi's Stadium）", matches:"6場｜含32強（7/1）",  link:"" },
+  la:           { name:"洛杉磯",      country:"美國",          cc:"us-tt", stadium:"索菲體育場（SoFi Stadium）", matches:"8場｜含準決賽（7/10）", link:"" },
+  toronto:      { name:"多倫多",      country:"加拿大",        cc:"ca-tt", stadium:"BMO Field",              matches:"6場",                     link:"" },
+  boston:       { name:"波士頓",      country:"美國",          cc:"us-tt", stadium:"吉利特球場（Gillette Stadium）", matches:"7場｜含8強（7/9）", link:"" },
+  nyc:          { name:"紐約／新澤西",country:"美國｜決賽城市",cc:"final-tt",stadium:"大都會人壽球場（MetLife Stadium）", matches:"8場｜含決賽（7/19）", link:"" },
+  philly:       { name:"費城",        country:"美國",          cc:"us-tt", stadium:"林肯金融球場",           matches:"6場｜含16強（7/4）",      link:"" },
+  kc:           { name:"堪薩斯城",    country:"美國",          cc:"us-tt", stadium:"箭頭球場（Arrowhead Stadium）", matches:"6場｜含8強（7/11）", link:"" },
+  atlanta:      { name:"亞特蘭大",    country:"美國",          cc:"us-tt", stadium:"賓士寶體育場（Mercedes-Benz Stadium）", matches:"8場｜含準決賽（7/15）", link:"" },
+  dallas:       { name:"達拉斯",      country:"美國",          cc:"us-tt", stadium:"AT&T球場",               matches:"9場｜含準決賽（7/14）",   link:"" },
+  houston:      { name:"休士頓",      country:"美國",          cc:"us-tt", stadium:"NRG球場",                matches:"7場｜含16強（7/4）",      link:"" },
+  miami:        { name:"邁阿密",      country:"美國",          cc:"us-tt", stadium:"硬石球場（Hard Rock Stadium）", matches:"7場｜含季軍賽（7/18）", link:"" },
+  monterrey:    { name:"蒙特雷",      country:"墨西哥",        cc:"mx-tt", stadium:"BBVA球場",               matches:"4場｜含32強（6/29）",     link:"" },
+  mexicocity:   { name:"墨西哥城",    country:"墨西哥",        cc:"mx-tt", stadium:"阿茲特克球場（Estadio Azteca）", matches:"5場｜含揭幕戰（6/11）", link:"" },
+  guadalajara:  { name:"瓜達拉哈拉",  country:"墨西哥",        cc:"mx-tt", stadium:"阿科隆球場（Estadio Akron）", matches:"4場",                 link:"" },
+};
+
+const tooltip  = document.getElementById('tooltip');
+const overlay  = document.getElementById('overlay');
+const ttClose  = document.getElementById('ttClose');
+const mapInner = document.getElementById('mapInner');
+let activePin  = null;
+
+function showTooltip(pin, data) {
+  // Update content
+  const countryEl = document.getElementById('ttCountry');
+  countryEl.textContent = data.country;
+  countryEl.className = 'tt-country ' + data.cc;
+  document.getElementById('ttCity').textContent    = data.name;
+  document.getElementById('ttStadium').textContent = data.stadium;
+  document.getElementById('ttMatches').textContent = '本屆場次：' + data.matches;
+
+  const wrap = document.getElementById('ttLinkWrap');
+  if (data.link) {
+    wrap.innerHTML = `<a class="tt-link" href="${data.link}" target="_blank">閱讀完整觀賽指南 →</a>`;
+  } else {
+    wrap.innerHTML = `<span class="tt-soon">文章即將刊出</span>`;
+  }
+
+  // Position tooltip near pin, but keep within viewport
+  const pinRect = pin.getBoundingClientRect();
+  const tw = 230, th = 160;
+  const vw = window.innerWidth, vh = window.innerHeight;
+
+  let left = pinRect.right + 10;
+  let top  = pinRect.top - 10;
+
+  if (left + tw > vw - 10) left = pinRect.left - tw - 10;
+  if (left < 10) left = Math.max(10, (vw - tw) / 2);
+  if (top + th > vh - 10) top = vh - th - 10;
+  if (top < 10) top = 10;
+
+  tooltip.style.left = left + 'px';
+  tooltip.style.top  = top  + 'px';
+  tooltip.classList.add('visible');
+  overlay.classList.add('visible');
+
+  if (activePin) activePin.classList.remove('active');
+  pin.classList.add('active');
+  activePin = pin;
+}
+
+function hideTooltip() {
+  tooltip.classList.remove('visible');
+  overlay.classList.remove('visible');
+  if (activePin) { activePin.classList.remove('active'); activePin = null; }
+}
+
+// Attach click/tap to each pin
+document.querySelectorAll('.city-pin').forEach(pin => {
+  pin.addEventListener('click', function(e) {
+    e.stopPropagation();
+    const key  = pin.dataset.key;
+    const data = cities[key];
+    if (!data) return;
+
+    if (pin.classList.contains('active')) {
+      hideTooltip();
+    } else {
+      showTooltip(pin, data);
+    }
+  });
+});
+
+// Close on overlay tap or X button
+overlay.addEventListener('click', hideTooltip);
+ttClose.addEventListener('click', hideTooltip);
+
+// Also close on Escape key
+document.addEventListener('keydown', e => { if (e.key === 'Escape') hideTooltip(); });
+</script>
+
+</body>
+</html>
